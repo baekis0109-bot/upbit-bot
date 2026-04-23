@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import os
 import uuid
 import hashlib
 import jwt
@@ -34,7 +35,6 @@ def make_auth_headers(body):
 def trade():
     data = request.get_json()
 
-    # BUY
     if data["action"] == "BUY":
         body = {
             "market": data["market"],
@@ -42,8 +42,6 @@ def trade():
             "ord_type": "price",
             "price": data["price"]
         }
-
-    # SELL
     elif data["action"] == "SELL":
         body = {
             "market": data["market"],
@@ -51,12 +49,9 @@ def trade():
             "ord_type": "market",
             "volume": data["volume"]
         }
-
-    # 잘못된 요청
     else:
         return jsonify({"error": "invalid action"}), 400
 
-    # 업비트 요청
     headers = make_auth_headers(body)
 
     res = requests.post(
@@ -65,14 +60,13 @@ def trade():
         headers=headers
     )
 
-    # 성공/실패 구분
-    if res.status_code == 200 or res.status_code == 201:
+    if res.status_code in (200, 201):
         return jsonify(res.json()), 200
-    else:
-        return jsonify(res.json()), 400
+    return jsonify(res.json()), 400
 
-
-import os
+@app.get("/")
+def health():
+    return "ok", 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
